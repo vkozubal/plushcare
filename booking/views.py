@@ -25,16 +25,19 @@ def list_appointments(request, for_date: date, current_user_id=1):
 def book_appointment(request, current_user_id=1):
     """Allow patients to only book appointment."""
     if request.method != 'POST':
-        return JsonResponse(status=405, data='Method Not Allowed')
-
+        return JsonResponse(status=405, data={"reasons": ['Method Not Allowed']})
+    # print(f'{request.body} ************')
     payload = json.loads(request.body)
     doctor_id: int = payload['doctor_id']
     appointment_start: datetime = datetime.fromisoformat(payload['appointment_start'])
     appointment_finish: datetime = datetime.fromisoformat(payload['appointment_finish'])
 
-    visit_time = VisitTime(appointment_start, appointment_finish)
+    try:
+        visit_time = VisitTime(appointment_start, appointment_finish)
+    except ValueError as e:
+        return JsonResponse(status=400, data={"reasons": [str(e)]})
 
-    is_available, reasons = BookingService.check_appointment_time_availability(current_user_id, visit_time)
+    is_available, reasons = BookingService.check_appointment_time_availability(current_user_id, doctor_id, visit_time)
     if not is_available:
         return JsonResponse(status=409, data={"reasons": reasons})
 

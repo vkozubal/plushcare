@@ -19,6 +19,6 @@ class DateConverter:
 register_converter(DateConverter, 'day')
 
 urlpatterns = [
-    path('appointments/dates/<day:for_date>', views.list_appointments, name='appointments by date'),
+    path('appointments/dates/<day:for_date>', views.list_appointments, name='perday'),
     path('appointments/', views.book_appointment, name='bookings'),
 ]

@@ -9,14 +9,12 @@ def combine_names(apps, _):
     Doctor(
         email='Joey.Tribbiani@gmail.com',
         name='Drake Ramore',
-        created_at=datetime.utcnow(),
         specialization='neuroscience',
     ).save()
 
     Doctor(
         email='Hugh.Laurie@gmail.com',
         name='Dr. Gregory House',
-        created_at=datetime.utcnow(),
         specialization='physician',
     ).save()
 
@@ -24,7 +22,6 @@ def combine_names(apps, _):
     Patient(
         email='johnd@gmail.com',
         name='John Doe',
-        created_at=datetime.utcnow(),
     ).save()
 
 
