@@ -13,3 +13,22 @@ b) Book appointment
 For simplicity reasons, both APIs won't require authentication. A front-end is also not required. Unit tests are not required but encouraged.
 
 Please send back the project as a zip file with instructions on how to run it. You could also add a Postman or Charles session to demonstrate the use of the API.
+
+
+HOW TO:
+
+Apply migration and run server
+```bash
+python manage.py migrate booking
+python manage.py runserver
+```
+
+Book appointment
+```bash
+curl -v -X POST http://127.0.0.1:8000/appointments/ -d '{"appointment_start":"2020-10-08T12:14:58.975532", "appointment_finish":"2020-10-08T16:14:58.975532", "doctor_id":2 }'
+```
+
+List appointments
+```bash
+curl -v  http://127.0.0.1:8000/appointments/dates/20201008
+```
