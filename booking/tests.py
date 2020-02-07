@@ -141,6 +141,44 @@ class TestSetAppointmentNonWorkingHours(TestCase):
             self.assertEquals(response.status_code, status_code)
 
 
+class TestDifferentMonthsAndWeeksDays(TestCase):
+    def setUp(self) -> None:
+        self._client = Client()
+        Appointment(
+            doctor_id=1,
+            patient_id=1,
+            appointment_start=datetime.fromisoformat("2020-10-08T12:14:58.975"),
+            appointment_finish=datetime.fromisoformat("2020-10-08T16:14:58.975")
+        ).save()
+        Appointment(
+            doctor_id=1,
+            patient_id=1,
+            appointment_start=datetime.fromisoformat("2020-10-08T17:20:58.975"),
+            appointment_finish=datetime.fromisoformat("2020-10-08T17:21:58.975")
+        ).save()
+        Appointment(
+            doctor_id=1,
+            patient_id=1,
+            appointment_start=datetime.fromisoformat("2020-10-05T17:20:58.975"),
+            appointment_finish=datetime.fromisoformat("2020-10-05T17:21:58.975")
+        ).save()
+        Appointment(
+            doctor_id=1,
+            patient_id=1,
+            appointment_start=datetime.fromisoformat("2020-11-02T17:20:58.975"),
+            appointment_finish=datetime.fromisoformat("2020-11-02T17:21:58.975")
+        ).save()
+
+    def test_positive(self):
+        response = self._client.post(reverse('bookings'), data={
+            "appointment_start": datetime.fromisoformat("2020-10-02T17:20:58.975532"),
+            "appointment_finish": datetime.fromisoformat("2020-10-02T17:21:58.975532"),
+            "doctor_id": 1
+        }, content_type='application/json')
+
+        self.assertEquals(response.status_code, 201)
+
+
 class TestBookingTwoPatientsConflicts(TestCase):
 
     def setUp(self) -> None:
