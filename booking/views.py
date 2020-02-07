@@ -1,22 +1,13 @@
 import json
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from booking.domain import *
+from booking.range import VisitTime
 from booking.models import Appointment
-from booking.booking_dao import BookingDAO
-
-doctor_availability_filter = CompositeAvailabilityFilter([
-    WorkingDayAndHourAvailabilityFilter(),
-    SlotAvailabilityFilter()
-])
-
-patient_availability_filter = CompositeAvailabilityFilter([
-    SlotAvailabilityFilter()
-])
+from booking.booking_service import BookingService
 
 
 @csrf_exempt
@@ -26,8 +17,7 @@ def list_appointments(request, for_date: date, current_user_id=1):
     if request.method != 'GET':
         return HttpResponse(status=405)
 
-    query_set = BookingDAO.get_appointments_for_range(current_user_id, for_date, timedelta(days=1) + for_date)
-
+    query_set = BookingService.get_appointments_for_range(current_user_id, for_date, timedelta(days=1) + for_date)
     return JsonResponse(status=200, data={"appointments": [model_to_dict(model) for model in query_set]})
 
 
@@ -44,12 +34,8 @@ def book_appointment(request, current_user_id=1):
 
     visit_time = VisitTime(appointment_start, appointment_finish)
 
-    doctor_availability, reasons = doctor_availability_filter(visit_time, current_user_id)
-    if not doctor_availability:  # doctor isn't available for the specified visit time
-        return JsonResponse(status=409, data={"reasons": reasons})
-
-    patient_available, reasons = patient_availability_filter(visit_time, current_user_id)
-    if not patient_available:  # patient isn't available for the specified visit time
+    is_available, reasons = BookingService.check_appointment_time_availability(current_user_id, visit_time)
+    if not is_available:
         return JsonResponse(status=409, data={"reasons": reasons})
 
     appointment = Appointment(

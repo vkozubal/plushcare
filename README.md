@@ -17,7 +17,7 @@ Please send back the project as a zip file with instructions on how to run it. Y
 
 HOW TO:
 
-Apply migration and run server
+Apply migration and run server. Database is populated with patients and doctors.
 ```bash
 python manage.py migrate booking
 python manage.py runserver
@@ -28,7 +28,7 @@ Book appointment
 curl -v -X POST http://127.0.0.1:8000/appointments/ -d '{"appointment_start":"2020-10-08T12:14:58.975532", "appointment_finish":"2020-10-08T16:14:58.975532", "doctor_id":2 }'
 ```
 
-List appointments
+List appointments for the specific date. Date format: `%Y%m%d`
 ```bash
 curl -v  http://127.0.0.1:8000/appointments/dates/20201008
 ```

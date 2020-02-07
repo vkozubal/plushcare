@@ -2,55 +2,48 @@ import abc
 from datetime import datetime
 
 import typing
+from django.db.models import Q
 
-from booking.booking_dao import BookingDAO
-
-
-class Range(abc.ABC):
-    @abc.abstractmethod
-    def __call__(self, dt: datetime) -> bool:
-        raise NotImplementedError
-
-    def __str__(self):
-        return repr(self)
+from booking.range import VisitTime, HoursRange, Range
+from booking.models import Appointment
 
 
-class HoursRange(Range):
-    def __init__(self, start: int, end: int):
-        self.start = start
-        self.end = end
+class BookingService:
+    @staticmethod
+    def get_appointments_for_range(user_id, from_date: datetime.date, to_date: datetime.date):
+        return Appointment.objects.filter(
+            patient=user_id,
+            appointment_start__range=[from_date, to_date]
+        )
 
-    def __call__(self, dt: datetime) -> bool:
-        return self.start <= dt.hour < self.end
+    @staticmethod
+    def appointments_fall_in_range(user_id, visit: VisitTime):
+        from_date, to_date = visit.start, visit.end
+        return Appointment.objects.filter(
+            Q(patient=user_id) & (
+                    Q(appointment_start__range=[from_date, to_date]) | Q(appointment_finish__range=[from_date, to_date])
+            )
+        )
 
-    def __repr__(self):
-        return f'{self.start} <= current_hour < {self.end}'
+    @staticmethod
+    def check_appointment_time_availability(user_id, visit_time: VisitTime):
+        doctor_availability, reasons = doctor_availability_filter(visit_time, user_id)
+        if not doctor_availability:  # doctor isn't available for the specified visit time
+            return False, reasons
 
+        patient_available, reasons = patient_availability_filter(visit_time, user_id)
+        if not patient_available:  # patient isn't available for the specified visit time
+            return False, reasons
 
-class VisitTime:
-    def __init__(self, start: datetime, end: datetime):
-        """Visit time range. Performs validation of input parameters
-        :param start: datetime we perform check for
-        :param duration: duration of the visit
-        """
-
-        if start.date() != end.date():  # on the same date
-            raise ValueError("Visit should finish on the same day.")
-
-        if start >= end:
-            raise ValueError("Visit duration should be positive.")
-
-        self.start = start
-        self.end = end
+        return True, []
 
 
 class AvailabilityFilter(abc.ABC):
-
     @abc.abstractmethod
     def __call__(self, visit: VisitTime, user_id) -> (bool, typing.List[str]):
         """
         General filter returns availability for a specified time of visit
-        :return: tuple (availability, explanation)
+        :return: tuple (availability, [explanations])
         """
         return NotImplementedError
 
@@ -83,8 +76,18 @@ class WorkingDayAndHourAvailabilityFilter(AvailabilityFilter):
 
 
 class SlotAvailabilityFilter(AvailabilityFilter):
-    """Checking the """
+    """Checking the slot availability"""
 
     def __call__(self, visit: VisitTime, user_id) -> (bool, typing.List[str]):
-        conflicting_appointments = BookingDAO.appointments_fall_in_range(visit.start, visit.end, user_id)
+        conflicting_appointments = BookingService.appointments_fall_in_range(user_id, visit)
         return not len(conflicting_appointments), ["Time slot already taken."]
+
+
+doctor_availability_filter = CompositeAvailabilityFilter([
+    WorkingDayAndHourAvailabilityFilter(),
+    SlotAvailabilityFilter()
+])
+
+patient_availability_filter = CompositeAvailabilityFilter([
+    SlotAvailabilityFilter()
+])
