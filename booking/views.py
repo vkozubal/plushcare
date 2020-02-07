@@ -26,7 +26,6 @@ def book_appointment(request, current_user_id=1):
     """Allow patients to only book appointment."""
     if request.method != 'POST':
         return JsonResponse(status=405, data={"reasons": ['Method Not Allowed']})
-    # print(f'{request.body} ************')
     payload = json.loads(request.body)
     doctor_id: int = payload['doctor_id']
     appointment_start: datetime = datetime.fromisoformat(payload['appointment_start'])
